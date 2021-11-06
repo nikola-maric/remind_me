@@ -2,7 +2,7 @@
 [![Tests](https://github.com/nikola-maric/remind_me/workflows/Tests/badge.svg?branch=master)](https://github.com/nikola-maric/remind_me/actions?query=workflow%3ATests+branch%3Amaster)
 
 This gem's main purpose is to scan a file or directory for specific comments in the code. Comments are
-specified as a hash with `REMIND_ME:` (with a dot) prefixed to it, for example: 
+specified as a hash with `REMIND_ME:` (with a colon) prefixed to it, for example: 
 `# REMIND_ME: { gem: 'rails', version: '5.2', condition: :gte, message: 'Remove this method once we switch to Rails 5.2'}`.
 
 Idea is that we often get into situations like this: we create some functionality, but know some
@@ -128,7 +128,7 @@ If you want to use it with Rails + rake, you can add something like this to your
 require 'remind_me/remind_me'
 
 desc 'picks up REMIND_ME comments from codebase and checks if their conditions are met'
-task kme: :environment do
+task check_reminders: :environment do
   RemindMe::Runner.new.check_reminders # will default to using '.' if no explicit path is given
 end
 ```
