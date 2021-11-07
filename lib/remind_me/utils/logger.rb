@@ -5,19 +5,11 @@ module RemindMe
     module Logger
 
       def log_info(msg)
-        if defined?(Rails)
-          Rails.logger.info green(msg)
-        else
-          puts green(msg)
-        end
+        rails_being_used? ? log_with_rails(green(msg), :info) : puts(green(msg))
       end
 
       def log_error(msg)
-        if defined?(Rails)
-          Rails.logger.error red(msg)
-        else
-          puts red(msg)
-        end
+        rails_being_used? ? log_with_rails(red(msg), :error) : puts(red(msg))
       end
 
       def colorize(color_code, string)
@@ -30,6 +22,14 @@ module RemindMe
 
       def green(string)
         colorize(32, string)
+      end
+
+      def rails_being_used?
+        defined?(Rails)
+      end
+
+      def log_with_rails(msg, severity)
+        Rails.logger.send(severity, msg)
       end
     end
   end

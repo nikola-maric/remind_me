@@ -4,8 +4,6 @@ require 'erb'
 
 RSpec.describe RemindMe::Runner do
 
-  subject { described_class.new }
-
   # GEM VERSION REMINDER - single line comments
 
   let(:gem_version_single_line_error_messages) do
@@ -210,7 +208,22 @@ RSpec.describe RemindMe::Runner do
     ]
   end
 
-  describe '.collect_reminders' do
+  describe '#check_reminders' do
+    it 'passes reminders collected to result printer' do
+      dummy_path = 'dummy_path'
+      collected_reminders = double(:collected_reminders)
+      allow(subject).to receive(:collect_reminders).with(dummy_path).and_return(collected_reminders)
+      allow(RemindMe::Utils::ResultPrinter)
+        .to receive(:new).with(collected_reminders).and_return(
+          double(:result_printer).tap do |printer_double|
+            expect(printer_double).to receive(:print_results).once
+          end
+        )
+      subject.check_reminders(check_path: dummy_path)
+    end
+  end
+
+  describe '#collect_reminders' do
 
     it 'errors out when no ruby files are found' do
       expect { subject.collect_reminders('spec/testing_grounds/empty_directory') }.to raise_error(RemindMe::BailOut::Error)

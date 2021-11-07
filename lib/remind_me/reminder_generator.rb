@@ -14,18 +14,26 @@ module RemindMe
       RemindMe::Reminder::RubyVersionReminder
     ].freeze
 
-    def self.generate!(source_location, reminder_comment, parser)
+    def self.generate(source_location, reminder_comment, parser)
       parser.reset
       begin
         reminder_comment_ast = parser.class.parse(reminder_comment)
       rescue Parser::SyntaxError => e
         return [unparsable_reminder(source_location, e)]
       end
-      relevant_reminders_classes = REGISTERED_REMINDERS.select do |reminder_class|
-        reminder_class.applicable_to?(reminder_comment_ast)
-      end
+      relevant_reminders_classes = relevant_reminders_classes(reminder_comment_ast)
       return [unknown_reminder(source_location, reminder_comment)] if relevant_reminders_classes.empty?
 
+      create_reminders_from(reminder_comment_ast, source_location, relevant_reminders_classes)
+    end
+
+    def self.relevant_reminders_classes(reminder_comment_ast)
+      REGISTERED_REMINDERS.select do |reminder_class|
+        reminder_class.applicable_to?(reminder_comment_ast)
+      end
+    end
+
+    def self.create_reminders_from(reminder_comment_ast, source_location, relevant_reminders_classes)
       relevant_reminders_classes.map do |reminder_class|
         reminder_class.build_from(reminder_comment_ast, source_location)
       end
@@ -44,6 +52,9 @@ module RemindMe
              "REMIND_ME comment in #{source_location}: unable to parse, message: #{error.message}")
     end
 
-    private_class_method :unknown_reminder, :unparsable_reminder
+    private_class_method :unknown_reminder,
+                         :unparsable_reminder,
+                         :relevant_reminders_classes,
+                         :create_reminders_from
   end
 end

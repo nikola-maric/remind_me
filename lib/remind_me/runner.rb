@@ -8,6 +8,7 @@ require_relative 'version'
 require_relative 'bail_out'
 require_relative 'reminder_generator'
 require_relative 'utils/logger'
+require_relative 'utils/result_printer'
 
 module RemindMe
   class Runner
@@ -25,27 +26,7 @@ module RemindMe
     def check_reminders(check_path: '.')
       log_info "Checking #{check_path} for any REMIND_ME comments..."
       all_reminders = collect_reminders(check_path)
-      if all_reminders.empty?
-        log_info 'No reminders found'
-      else
-        valid_reminders = all_reminders.reject { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }
-        invalid_reminders = all_reminders.select { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }
-        if invalid_reminders.size.positive?
-          message = invalid_reminders.map(&:message).join("\n")
-          log_error(message)
-          abort
-        else
-          valid_condition_met_reminders = valid_reminders.select(&:conditions_met?)
-          if valid_condition_met_reminders.size.positive?
-            message = valid_condition_met_reminders.map(&:message).join("\n")
-            log_error(message)
-            abort
-          else
-            log_info "Found #{all_reminders.size} REMIND_ME comment(s), but none of the conditions were met..yet!"
-          end
-        end
-      end
-
+      Utils::ResultPrinter.new(all_reminders).print_results
     end
 
     def collect_reminders(parse_path)
@@ -53,7 +34,7 @@ module RemindMe
       bail_out!('Need something to parse!') if files.empty?
       log_info "Found #{files.size} ruby files"
       raw_comments = collect_relevant_comments(files)
-      raw_comments.flat_map { |raw_comment| ReminderGenerator.generate!(raw_comment[0], raw_comment[1], parser) }
+      raw_comments.flat_map { |raw_comment| ReminderGenerator.generate(raw_comment[0], raw_comment[1], parser) }
     end
 
     private

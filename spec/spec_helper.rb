@@ -1,7 +1,12 @@
 # frozen_string_literal: true
 require 'simplecov'
 
-SimpleCov.start
+if RSpec.configuration.files_to_run.size > 1
+  SimpleCov.minimum_coverage_by_file 80
+  SimpleCov.minimum_coverage 90
+  SimpleCov.refuse_coverage_drop
+  SimpleCov.start
+end
 
 require 'remind_me/remind_me'
 
