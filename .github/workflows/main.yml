@@ -9,7 +9,6 @@ jobs:
       fail-fast: false
       matrix:
         ruby: [ "2.3.7", "2.4.10", "2.5.9", "2.6.8", "2.7.4", "3.0.2", "jruby-9.2" ]
-        test_command: [ "bundle exec rake spec" ]
     steps:
     - uses: actions/checkout@v2
     - name: Set up Ruby
@@ -19,7 +18,10 @@ jobs:
     - name: Bundle install
       run: |
         gem install bundler
-        bundle install
-    - name: Run tests
-      run: |
-        ${{ matrix.test_command }}
+        bundle install --jobs=3
+    - name: Run tests (MRI)
+      run: bundle exec rake spec
+      if: "!startsWith(matrix.ruby, 'jruby')"
+    - name: Run tests (JRuby)
+      run: JRUBY_OPTS=--debug bundle exec rake spec
+      if: startsWith(matrix.ruby, 'jruby')

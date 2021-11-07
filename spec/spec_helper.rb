@@ -4,7 +4,6 @@ require 'simplecov'
 if RSpec.configuration.files_to_run.size > 1
   SimpleCov.minimum_coverage_by_file 80
   SimpleCov.minimum_coverage 90
-  SimpleCov.refuse_coverage_drop
   SimpleCov.start
 end
 
