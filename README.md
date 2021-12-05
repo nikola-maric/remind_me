@@ -1,4 +1,4 @@
-# RemindMe
+# Remind Me
 [![Tests](https://github.com/nikola-maric/remind_me/workflows/Tests/badge.svg?branch=master)](https://github.com/nikola-maric/remind_me/actions?query=workflow%3ATests+branch%3Amaster)
 
 This gem's main purpose is to scan a file or directory for specific comments in the code. Comments are
@@ -119,24 +119,43 @@ If condition is omitted, it will default to `eq`.
 if message is omitted, it will default to `'Condition met!'`
 
 ### Usage example
-
-No rake tasks is made available out-of-the-box: reason is that usually you want your app environment
-to be loaded when running rake tasks (otherwise list of installed gems might be quite different). At least I didn't dig 
-through enough to figure out how to instantiate proper environments from within gem code itself.
-If you want to use it with Rails + rake, you can add something like this to your `.rake` file of choice:
+Single rake task is added to Rails project, if gem is included in Rails-based project. You can call it with
+`bundle exec rake remind_me:check_reminders`. It will use `.` directory by default, if you need to customize this
+add specific task in one of your `.rake` files and specify another directory, like so:
 ```ruby
-require 'remind_me/remind_me'
+require 'remind_me'
 
 desc 'picks up REMIND_ME comments from codebase and checks if their conditions are met'
-task check_reminders: :environment do
-  RemindMe::Runner.new.check_reminders # will default to using '.' if no explicit path is given
+task custom_check_reminders: :environment do
+  RemindMe::Runner.new.check_reminders('/some/other/directory.')
 end
 ```
-you could also pass arguments to your rake task and then invoke `Runner` with path specified that way, 
-using `RemindMe::Runner.new.check_reminders(check_path: path_variable)`.
 
 If `Rails` is defined, `Rails.logger` will be used for printing results, otherwise `puts` will be used. Make sure your Rails logger
 is configured to work properly from within rake task.
+
+## Adding custom reminders
+You can define custom reminders in your code by registering your reminder class with `RemindMe::Reminder::Generator`. For example:
+```ruby
+# in initializers/experimental_reminder.rb
+module Timed
+  class Reminder < RemindMe::Reminder::BaseReminder
+    apply_to_hash_with %i[after_time]
+    validate_hash_ast key: :message, value_types: %i[str], default_value: 'Condition met!'
+
+    def conditions_met?
+      Time.parse(hash_after_time).past?
+    end
+
+    def validation_errors
+      Time.parse(hash_after_time)
+    rescue StandardError => e
+      ["'after_time' holds value that can't be parsed into time (#{e.message})"]
+    end
+  end
+end
+```
+Subclassing `RemindMe::Reminder::BaseReminder` will automatically register it as one of potential reminder processors.
 
 ## Future work
 

@@ -7,7 +7,7 @@ if RSpec.configuration.files_to_run.size > 1
   SimpleCov.start
 end
 
-require 'remind_me/remind_me'
+require 'remind_me'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

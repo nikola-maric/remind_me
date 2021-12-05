@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    remind_me (0.1.0)
+    remind_me (0.2.0)
       parser (~> 3.0.2.0)
 
 GEM

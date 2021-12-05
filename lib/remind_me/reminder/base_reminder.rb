@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
-require_relative '../bail_out'
-require_relative 'invalid_reminder'
 require_relative '../utils/hash_ast_manipulations'
+require_relative 'generator'
 
 module RemindMe
   module Reminder
@@ -10,6 +9,11 @@ module RemindMe
       extend RemindMe::Utils::HashASTManipulations
 
       attr_reader :reminder_comment_ast, :source_location
+
+      def self.inherited(base)
+        RemindMe::Reminder::Generator.register(base)
+        super(base)
+      end
 
       def conditions_met?
         raise NotImplementedError
@@ -24,7 +28,7 @@ module RemindMe
       end
 
       def message
-        "#{self.class.hash_ast_message_value(reminder_comment_ast)} at #{source_location}"
+        "#{hash_message} at #{source_location}"
       end
 
       private

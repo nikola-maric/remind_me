@@ -9,7 +9,7 @@ module RemindMe
       # Will look for string/symbol keys with specified names in the comment, and if all are found, will return true
       def apply_to_hash_with(key_values)
         # Method for determining if we should consider given reminder for this AST
-        define_singleton_method('applicable_to?') do |ast|
+        define_singleton_method('applicable_to_ast?') do |ast|
           ast.type == :hash && key_values.all? { |key_value| key_present?(ast, key_value) }
         end
         # Building a Reminder from AST, creating invalid one if any of validations returns any non-nil value
@@ -17,7 +17,33 @@ module RemindMe
           create_reminder_from_ast(reminder_comment_ast, source_location)
         end
         key_values.each do |key|
-          create_hash_value_accessor_method(key) unless singleton_method_defined?("hash_ast_#{key}_value")
+          validate_hash_ast(key: key, value_types: %i[sym str])
+        end
+      end
+
+      def validate_hash_ast(key:, value_types:, **options)
+        @hash_ast_default_values ||= {}
+        @hash_ast_default_values[key] = options[:default_value] if options.key?(:default_value)
+        create_hash_value_accessor_method(key)
+        define_singleton_method("validate_hash_ast_#{key}") do |ast, source_location|
+          return "REMIND_ME comment in #{source_location} is not a Hash" unless ast.type == :hash
+
+          pair = ast_hash_pair(ast, key)
+          # Valid pair was not found...
+          if pair.nil?
+            # ... and we don't have default value set for it
+            unless @hash_ast_default_values.key?(key)
+              "REMIND_ME comment in #{source_location}: value for '#{key}' could not be found, key needs to be "\
+              "either String or Symbol. If not set 'default_value' can be used, but that one was not given as well"
+            end
+            # Pair was found...
+          else
+            # ... but it does not have proper value type
+            unless valid_hash_ast_value?(pair, value_types)
+              "REMIND_ME comment in #{source_location}: value under specified key '#{key}' does not have allowed "\
+              "type (it has '#{hash_ast_pair_value_type(pair)}'), allowed types are #{value_types}"
+            end
+          end
         end
       end
 
@@ -40,37 +66,15 @@ module RemindMe
         end
       end
 
-      def validate_hash_ast(key:, value_types:, **options)
-        @hash_ast_default_values ||= {}
-        @hash_ast_default_values[key] = options[:default_value] if options.key?(:default_value)
-        create_hash_value_accessor_method(key) unless singleton_method_defined?("hash_ast_#{key}_value")
-        define_singleton_method("validate_hash_ast_#{key}") do |ast, source_location|
-          return "REMIND_ME comment in #{source_location} is not a Hash" unless ast.type == :hash
-
-          pair = ast_hash_pair(ast, key)
-          # Pair was not found...
-          if pair.nil?
-            # ... and we don't have default value set for it
-            unless @hash_ast_default_values.key?(key)
-              "REMIND_ME comment in #{source_location}: value for '#{key}' could not be found, key needs to be "\
-              "either String or Symbol. If not set 'default_value' can be used, but that one was not given as well"
-            end
-          # Pair was found...
-          else
-            # ... but it does not have proper value type
-            unless valid_hash_ast_value?(pair, value_types)
-              "REMIND_ME comment in #{source_location}: value under specified key '#{key}' does not have allowed "\
-              "type (it has '#{hash_ast_pair_value_type(pair)}'), allowed types are #{value_types}"
-            end
-          end
-        end
-      end
-
       def create_hash_value_accessor_method(key)
-        define_singleton_method("hash_ast_#{key}_value") do |ast|
-          value = hash_ast_pair_value(ast_hash_pair(ast, key))
-          if (value.nil? || value == '') && @hash_ast_default_values.key?(key)
-            @hash_ast_default_values[key]
+        return if method_defined?("hash_#{key}")
+
+        send(:define_method, "hash_#{key}") do
+          comment_ast = instance_variable_get('@reminder_comment_ast')
+          value = self.class.hash_ast_pair_value(self.class.ast_hash_pair(comment_ast, key))
+          default_values = self.class.instance_variable_get('@hash_ast_default_values')
+          if (value.nil? || value == '') && default_values.key?(key)
+            default_values[key]
           else
             value
           end

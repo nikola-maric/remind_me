@@ -1,5 +1,7 @@
 # frozen_string_literal: true
+
 require 'spec_helper'
+require 'remind_me/reminder/ruby_version_reminder'
 
 RSpec.describe RemindMe::Reminder::RubyVersionReminder do
 
@@ -8,22 +10,22 @@ RSpec.describe RemindMe::Reminder::RubyVersionReminder do
   let(:lower_ruby_version) { '1.9' }
   let(:greater_ruby_version) { Gem::Version.new(RUBY_VERSION).bump.to_s }
 
-  describe '#applicable_to?' do
+  describe '#applicable_to_ast?' do
     it 'returns true because `ruby_version` is present, as string' do
       comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', message: 'Message 8'}")
-      expect(described_class.applicable_to?(comment_ast)).to eq(true)
+      expect(described_class.applicable_to_ast?(comment_ast)).to eq(true)
     end
     it 'returns true because `gem` is present, as symbol' do
       comment_ast = parse_string("{ ruby_version: '#{current_ruby_version}', 'condition' => 'gt', message: 'Message 8'}")
-      expect(described_class.applicable_to?(comment_ast)).to eq(true)
+      expect(described_class.applicable_to_ast?(comment_ast)).to eq(true)
     end
     it 'returns false because `gem` is present, but not as string or symbol' do
       comment_ast = parse_string("{ ruby_version => '#{current_ruby_version}', 'condition' => 'gt', message: 'Message 8'}")
-      expect(described_class.applicable_to?(comment_ast)).to eq(false)
+      expect(described_class.applicable_to_ast?(comment_ast)).to eq(false)
     end
     it 'returns false because `gem` is not present' do
       comment_ast = parse_string("{ '_ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', message: 'Message 8'}")
-      expect(described_class.applicable_to?(comment_ast)).to eq(false)
+      expect(described_class.applicable_to_ast?(comment_ast)).to eq(false)
     end
   end
 
@@ -81,97 +83,138 @@ RSpec.describe RemindMe::Reminder::RubyVersionReminder do
     end
   end
 
-  describe 'getting values from AST' do
+  describe 'getting values from AST (reminder created must be valid)' do
     context 'getting ruby_version values' do
       it 'gets value because key is string' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', message: 'Message 8'}")
-        expect(described_class.hash_ast_ruby_version_value(comment_ast)).to eq(current_ruby_version)
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_ruby_version).to eq(current_ruby_version)
       end
       it 'gets value because key is symbol' do
         comment_ast = parse_string("{ ruby_version: '#{current_ruby_version}', 'condition' => 'gt', message: 'Message 8'}")
-        expect(described_class.hash_ast_ruby_version_value(comment_ast)).to eq(current_ruby_version)
-      end
-      it 'gets nil because value of hash is nil and there are no default values' do
-        comment_ast = parse_string("{ 'ruby_version' => nil, 'condition' => 'gt', message: 'Message 8'}")
-        expect(described_class.hash_ast_ruby_version_value(comment_ast)).to eq(nil)
-      end
-      it 'gets empty string because value of hash is empty string and there are no default values' do
-        comment_ast = parse_string("{ 'ruby_version' => '', 'condition' => 'gt', message: 'Message 8'}")
-        expect(described_class.hash_ast_ruby_version_value(comment_ast)).to eq('')
-      end
-      it 'gets nil because key/value pair is missing' do
-        comment_ast = parse_string("{ 'condition' => 'gt', message: 'Message 8'}")
-        expect(described_class.hash_ast_ruby_version_value(comment_ast)).to eq(nil)
-      end
-      it 'gets nil because key is not string/symbol' do
-        comment_ast = parse_string("{ ruby_version => '#{current_ruby_version}', 'condition' => 'gt', message: 'Message 8'}")
-        expect(described_class.hash_ast_ruby_version_value(comment_ast)).to eq(nil)
-      end
-      it 'gets value associated (no validations are involved, raw data is returned)' do
-        comment_ast = parse_string("{ 'ruby_version' => 42, 'condition' => 'gt', message: 'Message 8'}")
-        expect(described_class.hash_ast_ruby_version_value(comment_ast)).to eq(42)
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_ruby_version).to eq(current_ruby_version)
       end
     end
 
     context 'getting condition values' do
-      it 'gets value because key is string' do
-        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => :bla, message: 'Message 8'}")
-        expect(described_class.hash_ast_condition_value(comment_ast)).to eq(:bla)
-      end
-      it 'gets value because key is symbol' do
-        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', condition: :bla, message: 'Message 8'}")
-        expect(described_class.hash_ast_condition_value(comment_ast)).to eq(:bla)
-      end
-      it 'gets default value because value of hash is nil' do
-        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', condition: nil, message: 'Message 8'}")
-        expect(described_class.hash_ast_condition_value(comment_ast)).to eq(:eq)
-      end
       it 'gets default value because value of hash is empty string' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => '', message: 'Message 8'}")
-        expect(described_class.hash_ast_condition_value(comment_ast)).to eq(:eq)
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_condition).to eq(:eq)
       end
       it 'gets default value because key/value pair is missing' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', message: 'Message 8'}")
-        expect(described_class.hash_ast_condition_value(comment_ast)).to eq(:eq)
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_condition).to eq(:eq)
       end
-      it 'gets default value because key is not string/symbol' do
+      it 'gets default value because key is not string/symbol so we effectively can\'t find valid pair' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', condition => 'gt', message: 'Message 8'}")
-        expect(described_class.hash_ast_condition_value(comment_ast)).to eq(:eq)
-      end
-      it 'gets value associated (no validations are involved, raw data is returned)' do
-        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 42, message: 'Message 8'}")
-        expect(described_class.hash_ast_condition_value(comment_ast)).to eq(42)
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_condition).to eq(:eq)
       end
     end
 
     context 'getting message values' do
       it 'gets value because key is string' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', 'message' => 'Message 8'}")
-        expect(described_class.hash_ast_message_value(comment_ast)).to eq('Message 8')
-      end
-      it 'gets value because key is symbol' do
-        comment_ast = parse_string("{ gem: 'ast',  version: '2', 'condition' => :gt, message: 'Message 8'}")
-        expect(described_class.hash_ast_message_value(comment_ast)).to eq('Message 8')
-      end
-      it 'gets default value because value of hash is nil' do
-        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', message: nil}")
-        expect(described_class.hash_ast_message_value(comment_ast)).to eq('Condition met!')
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_message).to eq('Message 8')
       end
       it 'gets default value because value of hash is empty string' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', message: ''}")
-        expect(described_class.hash_ast_message_value(comment_ast)).to eq('Condition met!')
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_message).to eq('Condition met!')
       end
       it 'gets default value because key/value pair is missing' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt' }")
-        expect(described_class.hash_ast_message_value(comment_ast)).to eq('Condition met!')
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_message).to eq('Condition met!')
       end
-      it 'gets default value because key is not string/symbol' do
+      it 'gets default value because key is not string/symbol so we effectively can\'t find valid pair' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', message => 'Message 8'}")
-        expect(described_class.hash_ast_message_value(comment_ast)).to eq('Condition met!')
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.hash_message).to eq('Condition met!')
       end
-      it 'gets value associated (no validations are involved, raw data is returned)' do
+    end
+  end
+
+  describe '#build_from' do
+    context 'values are not valid so invalid reminder is returned' do
+      # ruby version
+      it 'value of ruby_version hash is nil and there are no default values' do
+        comment_ast = parse_string("{ 'ruby_version' => nil, 'condition' => 'gt', message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value under specified key 'ruby_version' does not have allowed type (it has 'nil'), allowed types are [:sym, :str]")
+      end
+      it 'value of ruby_version hash is empty string and there are no default values' do
+        comment_ast = parse_string("{ 'ruby_version' => '', 'condition' => 'gt', message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment on /dummy/source/location:7:7 has blank ruby version, you must specify version string")
+      end
+      it 'ruby_version key/value pair is missing' do
+        comment_ast = parse_string("{ 'condition' => 'gt', message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value for 'ruby_version' could not be found, key needs to be either String or Symbol. If not set 'default_value' can be used, but that one was not given as well")
+      end
+      it 'ruby_version key is not string/symbol' do
+        comment_ast = parse_string("{ ruby_version => '#{current_ruby_version}', 'condition' => 'gt', message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value for 'ruby_version' could not be found, key needs to be either String or Symbol. If not set 'default_value' can be used, but that one was not given as well")
+      end
+      it 'ruby_version hash value has invalid type' do
+        comment_ast = parse_string("{ 'ruby_version' => 42, 'condition' => 'gt', message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value under specified key 'ruby_version' does not have allowed type (it has 'int'), allowed types are [:sym, :str]")
+      end
+      # condition
+      it 'condition (string key) value is not one of predefined ones' do
+        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => :bla, message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment on /dummy/source/location:7:7 has invalid condition: bla, only lt, lte, gt, gte, eq are possible, or you can omit it entirely (it will default to eq)")
+      end
+      it 'condition (string key) value is not one of predefined ones' do
+        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', condition: :bla, message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment on /dummy/source/location:7:7 has invalid condition: bla, only lt, lte, gt, gte, eq are possible, or you can omit it entirely (it will default to eq)")
+      end
+      it 'value of condition hash is nil' do
+        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', condition: nil, message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value under specified key 'condition' does not have allowed type (it has 'nil'), allowed types are [:sym, :str]")
+      end
+      it 'condition (string key) value is not string/symbol' do
+        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 42, message: 'Message 8'}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value under specified key 'condition' does not have allowed type (it has 'int'), allowed types are [:sym, :str]")
+      end
+      # message
+      it 'value of message hash is nil (symbol key)' do
+        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', message: nil}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value under specified key 'message' does not have allowed type (it has 'nil'), allowed types are [:str]")
+      end
+      it 'value of message hash is nil (string key)' do
+        comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', 'message' => nil}")
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value under specified key 'message' does not have allowed type (it has 'nil'), allowed types are [:str]")
+      end
+      it 'value of message hash is not string' do
         comment_ast = parse_string("{ 'ruby_version' => '#{current_ruby_version}', 'condition' => 'gt', message: 42}")
-        expect(described_class.hash_ast_message_value(comment_ast)).to eq(42)
+        subject = described_class.build_from(comment_ast, dummy_location)
+        expect(subject.class).to eq(RemindMe::Reminder::InvalidReminder)
+        expect(subject.message).to eq("REMIND_ME comment in /dummy/source/location:7:7: value under specified key 'message' does not have allowed type (it has 'int'), allowed types are [:str]")
       end
     end
   end

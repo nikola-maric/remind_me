@@ -30,14 +30,6 @@ module RemindMe
 
       private
 
-      def hash_ruby_version
-        self.class.hash_ast_ruby_version_value(reminder_comment_ast)
-      end
-
-      def hash_condition
-        self.class.hash_ast_condition_value(reminder_comment_ast)
-      end
-
       def invalid_ruby_version_message
         "REMIND_ME comment on #{source_location} has blank ruby version, you must specify version string"
       end

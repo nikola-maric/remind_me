@@ -2,11 +2,10 @@
 
 require 'parser/current'
 require 'find'
-# require 'rubygems'
 
 require_relative 'version'
 require_relative 'bail_out'
-require_relative 'reminder_generator'
+require_relative 'reminder/generator'
 require_relative 'utils/logger'
 require_relative 'utils/result_printer'
 
@@ -34,7 +33,7 @@ module RemindMe
       bail_out!('Need something to parse!') if files.empty?
       log_info "Found #{files.size} ruby files"
       raw_comments = collect_relevant_comments(files)
-      raw_comments.flat_map { |raw_comment| ReminderGenerator.generate(raw_comment[0], raw_comment[1], parser) }
+      raw_comments.flat_map { |raw_comment| RemindMe::Reminder::Generator.generate(raw_comment[0], raw_comment[1], parser) }
     end
 
     private

@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'spec_helper'
+require 'remind_me/reminder/ruby_version_reminder'
 
 RSpec.describe RemindMe::Utils::ResultPrinter do
 

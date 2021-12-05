@@ -41,18 +41,6 @@ module RemindMe
 
       private
 
-      def hash_gem
-        self.class.hash_ast_gem_value(reminder_comment_ast).to_s
-      end
-
-      def hash_version
-        self.class.hash_ast_version_value(reminder_comment_ast)
-      end
-
-      def hash_condition
-        self.class.hash_ast_condition_value(reminder_comment_ast)
-      end
-
       def gem_missing_message
         "REMIND_ME comment in #{source_location} mentions '#{hash_gem}' gem, but that gem is not installed"
       end

@@ -6,26 +6,19 @@ module RemindMe
       INSTALLED_GEMS = Gem::Specification.map { |a| [a.name, a.version] }.to_h
 
       def compare_version_numbers(target_version, current_version, comparator)
-        case comparator.to_sym
-        when :lt
-          current_version < target_version
-        when :lte
-          current_version <= target_version
-        when :gt
-          current_version > target_version
-        when :gte
-          current_version >= target_version
-        when :eq
-          current_version == target_version
-        end
+        current_version.__send__(condition_comparators[comparator.to_sym], target_version)
       end
 
       def gem_installed?(gem)
-        INSTALLED_GEMS.key?(gem)
+        INSTALLED_GEMS.key?(gem.to_s)
       end
 
       def valid_condition?(condition)
-        %i[lt lte gt gte eq].flat_map { |x| [x, x.to_s] }.include?(condition)
+        condition_comparators.keys.flat_map { |x| [x, x.to_s] }.include?(condition)
+      end
+
+      def condition_comparators
+        %i[lt lte gt gte eq].zip(%i[< <= > >= ==]).to_h
       end
 
       def valid_version_string?(version_string)
