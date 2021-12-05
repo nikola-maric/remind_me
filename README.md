@@ -127,7 +127,7 @@ require 'remind_me'
 
 desc 'picks up REMIND_ME comments from codebase and checks if their conditions are met'
 task custom_check_reminders: :environment do
-  RemindMe::Runner.new.check_reminders('/some/other/directory.')
+  RemindMe::Runner.new.check_reminders('/some/other/directory/')
 end
 ```
 
@@ -137,7 +137,7 @@ is configured to work properly from within rake task.
 ## Adding custom reminders
 You can define custom reminders in your code by registering your reminder class with `RemindMe::Reminder::Generator`. For example:
 ```ruby
-# in initializers/experimental_reminder.rb
+# in initializers/timed_reminder.rb
 module Timed
   class Reminder < RemindMe::Reminder::BaseReminder
     apply_to_hash_with %i[after_time]
