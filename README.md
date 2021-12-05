@@ -1,5 +1,6 @@
 # Remind Me
 [![Tests](https://github.com/nikola-maric/remind_me/workflows/Tests/badge.svg?branch=master)](https://github.com/nikola-maric/remind_me/actions?query=workflow%3ATests+branch%3Amaster)
+[![Gem Version](https://badge.fury.io/rb/remind_me.svg)](https://badge.fury.io/rb/remind_me)
 
 This gem's main purpose is to scan a file or directory for specific comments in the code. Comments are
 specified as a hash with `REMIND_ME:` (with a colon) prefixed to it, for example: 
