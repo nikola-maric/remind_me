@@ -149,7 +149,7 @@ module Timed
     end
 
     def validation_errors
-      Time.parse(hash_after_time)
+      Time.parse(hash_after_time) && []
     rescue StandardError => e
       ["'after_time' holds value that can't be parsed into time (#{e.message})"]
     end
