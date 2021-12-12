@@ -209,25 +209,25 @@ RSpec.describe RemindMe::Runner do
     ]
   end
 
-  describe '#check_reminders' do
+  describe '.check_reminders' do
     it 'passes reminders collected to result printer' do
       dummy_path = 'dummy_path'
       collected_reminders = double(:collected_reminders)
-      allow(subject).to receive(:collect_reminders).with(dummy_path).and_return(collected_reminders)
+      allow(described_class).to receive(:collect_reminders).with(dummy_path).and_return(collected_reminders)
       allow(RemindMe::Utils::ResultPrinter)
         .to receive(:new).with(collected_reminders).and_return(
           double(:result_printer).tap do |printer_double|
             expect(printer_double).to receive(:print_results).once
           end
         )
-      subject.check_reminders(check_path: dummy_path)
+      described_class.check_reminders(check_path: dummy_path)
     end
   end
 
-  describe '#collect_reminders' do
+  describe '.collect_reminders' do
 
     it 'errors out when no ruby files are found' do
-      expect { subject.collect_reminders('spec/testing_grounds/empty_directory') }.to raise_error(RemindMe::BailOut::Error)
+      expect { described_class.collect_reminders('spec/testing_grounds/empty_directory') }.to raise_error(RemindMe::BailOut::Error)
     end
 
     context 'gem version reminders' do
@@ -288,8 +288,27 @@ RSpec.describe RemindMe::Runner do
     end
   end
 
+  describe '.all_file_comments' do
+    it 'parses comments using provided parser' do
+      parser = double(:parser, default_encoding: '42')
+      file = double(:file)
+      buffer_double = double(:buffer_double)
+      source_double = double(:source_double)
+      allow(parser).to receive(:reset).once
+      allow(File).to receive(:read).with(file).and_return(
+        double(:read_file).tap do |read_file|
+          allow(read_file).to receive(:force_encoding).with('42').and_return(source_double)
+        end
+      )
+      allow(Parser::Source::Buffer).to receive(:new).with(file).and_return(buffer_double)
+      allow(buffer_double).to receive(:source=).with(source_double)
+      allow(parser).to receive(:parse_with_comments).with(buffer_double).and_return(['ruby ast', 'comments'])
+      expect(described_class.all_file_comments(file, parser)).to eq('comments')
+    end
+  end
+
   def ruby_version_reminder_expectations(file, error_messages, condition_met_messages, condition_not_met_messages)
-    collected_reminders = subject.collect_reminders(file)
+    collected_reminders = described_class.collect_reminders(file)
     valid_condition_met_reminders = collected_reminders.reject { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }
                                                        .select(&:conditions_met?)
     valid_condition_not_met_reminders = collected_reminders.reject { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }
@@ -302,7 +321,7 @@ RSpec.describe RemindMe::Runner do
   end
 
   def missing_gem_reminder_expectations(file, error_messages, condition_met_messages, condition_not_met_messages)
-    collected_reminders = subject.collect_reminders(file)
+    collected_reminders = described_class.collect_reminders(file)
     valid_condition_met_reminders = collected_reminders.reject { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }
                                                        .select(&:conditions_met?)
     valid_condition_not_met_reminders = collected_reminders.reject { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }
@@ -314,7 +333,7 @@ RSpec.describe RemindMe::Runner do
   end
 
   def gem_version_reminder_expectations(file, error_messages, condition_met_messages, condition_not_met_messages)
-    collected_reminders = subject.collect_reminders(file)
+    collected_reminders = described_class.collect_reminders(file)
     valid_condition_met_reminders = collected_reminders.reject { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }
                                                        .select(&:conditions_met?)
     valid_condition_not_met_reminders = collected_reminders.reject { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }

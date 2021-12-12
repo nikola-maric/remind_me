@@ -378,10 +378,9 @@ RSpec.describe RemindMe::Reminder::RubyVersionReminder do
   end
 
   def parse_string(to_be_parsed)
-    runner = RemindMe::Runner.new
     buffer = Parser::Source::Buffer.new(to_be_parsed)
     buffer.raw_source = to_be_parsed
-    runner.parser.parse(buffer)
+    RemindMe::Runner.silent_parser.parse(buffer)
   end
 
   def current_ruby_version

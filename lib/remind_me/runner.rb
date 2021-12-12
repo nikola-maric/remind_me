@@ -2,6 +2,8 @@
 
 require 'parser/current'
 require 'find'
+require 'parallel/processor_count'
+require 'parallel'
 
 require_relative 'version'
 require_relative 'bail_out'
@@ -11,41 +13,32 @@ require_relative 'utils/result_printer'
 
 module RemindMe
   class Runner
-    include BailOut
-    include Utils::Logger
+    extend BailOut
+    extend Utils::Logger
+    extend Parallel::ProcessorCount
 
-    attr_reader :parser
-
-    def initialize
-      @parser = Parser::CurrentRuby.new
-      parser.diagnostics.consumer = ->(_message) {  }
-      parser.diagnostics.ignore_warnings = true
+    def self.check_reminders(check_path: '.')
+      Utils::ResultPrinter.new(collect_reminders(check_path)).print_results
     end
 
-    def check_reminders(check_path: '.')
-      log_info "Checking #{check_path} for any REMIND_ME comments..."
-      all_reminders = collect_reminders(check_path)
-      Utils::ResultPrinter.new(all_reminders).print_results
-    end
-
-    def collect_reminders(parse_path)
-      files = collect_ruby_files(parse_path)
+    def self.collect_reminders(path)
+      files = collect_ruby_files(path)
       bail_out!('Need something to parse!') if files.empty?
-      log_info "Found #{files.size} ruby files"
-      raw_comments = collect_relevant_comments(files)
-      raw_comments.flat_map { |raw_comment| RemindMe::Reminder::Generator.generate(raw_comment[0], raw_comment[1], parser) }
+      Parallel.flat_map(in_groups(files, processor_count, false)) do |files|
+        parser = silent_parser
+        raw_comments = collect_relevant_comments(files, parser)
+        raw_comments.flat_map { |raw_comment| RemindMe::Reminder::Generator.generate(raw_comment[0], raw_comment[1], parser) }
+      end
     end
 
-    private
-
-    def collect_relevant_comments(files)
-      files.flat_map { |file| all_file_comments(file) }
-           .map { |x| [x.location.expression.to_s, x.text.split('REMIND_ME:', 2)] }
-           .select { |x| x[1].size == 2 }
-           .map { |x| [x[0], x[1][1].split("\n").first] }
+    def self.silent_parser
+      parser = Parser::CurrentRuby.new
+      parser.diagnostics.consumer = ->(_message) {}
+      parser.diagnostics.ignore_warnings = true
+      parser
     end
 
-    def all_file_comments(file)
+    def self.all_file_comments(file, parser)
       parser.reset
       source = File.read(file).force_encoding(parser.default_encoding)
       buffer = Parser::Source::Buffer.new(file)
@@ -53,7 +46,14 @@ module RemindMe
       parser.parse_with_comments(buffer).last
     end
 
-    def collect_ruby_files(parse_path)
+    def self.collect_relevant_comments(files, parser)
+      files.flat_map { |file| all_file_comments(file, parser) }
+           .map { |x| [x.location.expression.to_s, x.text.split('REMIND_ME:', 2)] }
+           .select { |x| x[1].size == 2 }
+           .map { |x| [x[0], x[1][1].split("\n").first] }
+    end
+
+    def self.collect_ruby_files(parse_path)
       files = []
       if File.directory?(parse_path)
         Find.find(parse_path) do |path|
@@ -64,6 +64,26 @@ module RemindMe
       end
       files
     end
+
+    def self.in_groups(array, number, fill_with = nil)
+      division = array.size.div number
+      modulo = array.size % number
+      groups = []
+      start = 0
+
+      number.times do |index|
+        length = division + (modulo > 0 && modulo > index ? 1 : 0)
+        groups << last_group = array.slice(start, length)
+        last_group << fill_with if fill_with != false &&
+          modulo > 0 && length == division
+        start += length
+      end
+      groups
+    end
+
+    private_class_method :in_groups,
+                         :collect_ruby_files,
+                         :collect_relevant_comments
   end
 end
 
