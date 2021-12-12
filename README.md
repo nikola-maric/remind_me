@@ -137,8 +137,7 @@ is configured to work properly from within rake task.
 You can define custom reminders in your code by registering your reminder class with `RemindMe::Reminder::Generator`. For example:
 ```ruby
 # in initializers/timed_reminder.rb
-module Timed
-  class Reminder < RemindMe::Reminder::BaseReminder
+class TimedReminder < RemindMe::Reminder::BaseReminder
     apply_to_hash_with %i[after_time]
     validate_hash_ast key: :message, value_types: %i[str], default_value: 'Condition met!'
 
@@ -151,7 +150,6 @@ module Timed
     rescue StandardError => e
       ["'after_time' holds value that can't be parsed into time (#{e.message})"]
     end
-  end
 end
 ```
 Subclassing `RemindMe::Reminder::BaseReminder` will automatically register it as one of potential reminder processors.
