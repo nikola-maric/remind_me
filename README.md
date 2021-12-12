@@ -72,8 +72,6 @@ end
 **Important note**: in order to find and parse those comments properly, there are some limitations on how comments are used:
 - Entire `REMIND_ME: {}` comment needs to be on a single line, don't break it into multiple lines.
 - Thing after `REMIND_ME:` needs to have ruby hash structure
-- Both keys and values should be strings, symbols or strings/symbols, depending on reminder (for example, keys can
-be given as symbols, but for `version` values strings are only allowed)
 
 Each reminder type has a specific key that it "targets", for example `ruby_version`. If comment is found that does not 
 match any reminder, we will print out error message specifying that + location where that reminder is found.
@@ -88,7 +86,7 @@ to any known reminder processor.
 
 Has following structure: 
 `REMIND_ME: { gem: 'rails', version: '6', condition: :gte, message: 'Check this once rails 6 is available'}`.  
-It targets all comment hash-es that have `gem/'gem'` in them as a key. 
+It targets all comment hash-es that have `:gem/'gem'` in them as a key. 
 It will look at currently installed gems and compare that version to target version specified in comment.
 
 If version is omitted, we will only check if gem is installed or not (can be used to trigger
@@ -102,7 +100,7 @@ if message is omitted, it will default to `'Condition met!'`
 
 Has following structure:
 `REMIND_ME: { missing_gem: 'thor', message: 'Check this once we remove 'thor' gem'}`.  
-It targets all comment hash-es that have `missing_gem/'missing_gem'` in them as a key.
+It targets all comment hash-es that have `:missing_gem/'missing_gem'` in them as a key.
 It will look at currently installed gems and check to see if gem is installed, and will be triggered
 if its not.
 
@@ -112,7 +110,7 @@ if message is omitted, it will default to `'Condition met!'`
 
 Has following structure:
 `REMIND_ME: { ruby_version: '3', condition: :gte, message: 'Check this once we start using Ruby 3.0+'}`.  
-It targets all comment hash-es that have `ruby_version/'ruby_version'` in them as a key.
+It targets all comment hash-es that have `:ruby_version/'ruby_version'` in them as a key.
 It will look at currently used ruby version and compare that version to target version specified in comment.
 
 If condition is omitted, it will default to `eq`.
