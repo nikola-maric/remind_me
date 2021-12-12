@@ -126,7 +126,7 @@ require 'remind_me'
 
 desc 'picks up REMIND_ME comments from codebase and checks if their conditions are met'
 task custom_check_reminders: :environment do
-  RemindMe::Runner.new.check_reminders('/some/other/directory/')
+  RemindMe::Runner.new.check_reminders(check_path: '/some/other/directory/')
 end
 ```
 
