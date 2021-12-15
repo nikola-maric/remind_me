@@ -226,8 +226,12 @@ RSpec.describe RemindMe::Runner do
 
   describe '.collect_reminders' do
 
-    it 'errors out when no ruby files are found' do
-      expect { described_class.collect_reminders('spec/testing_grounds/empty_directory') }.to raise_error(RemindMe::BailOut::Error)
+    it 'prints message when no reminders are found' do
+      expect(described_class)
+        .to receive(:log_info)
+        .with("No REMIND_ME comments found in spec/testing_grounds/empty_directory")
+        .once
+      described_class.collect_reminders('spec/testing_grounds/empty_directory')
     end
 
     context 'gem version reminders' do
