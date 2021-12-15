@@ -12,8 +12,9 @@ module RemindMe
       end
 
       def print_results
-        if reminders.empty?
+        if reminders.nil? || reminders.empty?
           log_info 'No reminders found'
+          exit(0)
         else
           valid_reminders = reminders.reject { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }
           invalid_reminders = reminders.select { |r| r.is_a?(RemindMe::Reminder::InvalidReminder) }

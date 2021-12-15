@@ -227,10 +227,15 @@ RSpec.describe RemindMe::Runner do
   describe '.collect_reminders' do
 
     it 'prints message when no reminders are found' do
-      expect(described_class)
-        .to receive(:log_info)
-        .with("No REMIND_ME comments found in spec/testing_grounds/empty_directory")
-        .once
+      allow(RemindMe::Utils::ResultPrinter)
+        .to receive(:new)
+        .with(nil)
+        .and_return(
+          double(:result_printer).tap do |printer|
+            allow(printer).to receive(:log_info)
+            allow(printer).to receive(:exit).with(0)
+          end
+        )
       described_class.collect_reminders('spec/testing_grounds/empty_directory')
     end
 

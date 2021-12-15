@@ -12,6 +12,7 @@ RSpec.describe RemindMe::Utils::ResultPrinter do
     it 'prints appropriate message when there are no reminders' do
       subject = described_class.new([])
       expect(subject).to receive(:log_info).with('No reminders found')
+      expect(subject).to receive(:exit).with(0).once
       subject.print_results
     end
 
