@@ -22,7 +22,7 @@ module RemindMe
     end
 
     def self.collect_reminders(path)
-      files = collect_ruby_files(path)
+      files = relevant_ruby_files(path)
       bail_out!('Need something to parse!') if files.empty?
       Parallel.flat_map(in_groups(files, processor_count, false)) do |files|
         parser = silent_parser
@@ -53,6 +53,14 @@ module RemindMe
            .map { |x| [x[0], x[1][1].split("\n").first] }
     end
 
+    def self.relevant_ruby_files(parse_path)
+      Parallel.flat_map(in_groups(collect_ruby_files(parse_path), processor_count, false)) do |files|
+        files.select do |file|
+          IO.foreach(file).any? { |line| line.include?('REMIND_ME:') }
+        end
+      end
+    end
+
     def self.collect_ruby_files(parse_path)
       files = []
       if File.directory?(parse_path)
@@ -70,12 +78,10 @@ module RemindMe
       modulo = array.size % number
       groups = []
       start = 0
-
       number.times do |index|
-        length = division + (modulo > 0 && modulo > index ? 1 : 0)
+        length = division + (modulo.positive? && modulo > index ? 1 : 0)
         groups << last_group = array.slice(start, length)
-        last_group << fill_with if fill_with != false &&
-          modulo > 0 && length == division
+        last_group << fill_with if fill_with != false && modulo.positive? && length == division
         start += length
       end
       groups
