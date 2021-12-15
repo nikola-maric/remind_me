@@ -32,5 +32,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'simplecov'
 
+  spec.add_dependency 'parallel', '~> 1.19.2'
   spec.add_dependency 'parser', '~> 3.0.2.0'
 end
