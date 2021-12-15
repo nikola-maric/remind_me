@@ -23,11 +23,14 @@ module RemindMe
 
     def self.collect_reminders(path)
       files = relevant_ruby_files(path)
-      bail_out!('Need something to parse!') if files.empty?
-      Parallel.flat_map(in_groups(files, processor_count, false)) do |files|
-        parser = silent_parser
-        raw_comments = collect_relevant_comments(files, parser)
-        raw_comments.flat_map { |raw_comment| RemindMe::Reminder::Generator.generate(raw_comment[0], raw_comment[1], parser) }
+      if files.empty?
+        log_info("No REMIND_ME comments found in #{path}")
+      else
+        Parallel.flat_map(in_groups(files, processor_count, false)) do |files|
+          parser = silent_parser
+          raw_comments = collect_relevant_comments(files, parser)
+          raw_comments.flat_map { |raw_comment| RemindMe::Reminder::Generator.generate(raw_comment[0], raw_comment[1], parser) }
+        end
       end
     end
 
