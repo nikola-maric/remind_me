@@ -8,16 +8,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ "2.3.7", "2.4.10", "2.5.9", "2.6.8", "2.7.4", "3.0.2", "jruby-9.2" ]
+        ruby: [ "2.3.7", "2.4.10", "2.5.9", "2.6.8", "2.7.4", "3.0.6", "3.1.4", "3.2.2", "jruby-9.2", "jruby-9.3", "jruby-9.4" ]
+        include:
+          - ruby: "2.3.7"
+            bundler-version: '2.3.26'
+          - ruby: "2.4.10"
+            bundler-version: '2.3.26'
+          - ruby: "2.5.9"
+            bundler-version: '2.3.26'
+          - ruby: "2.6.8"
+            bundler-version: '2.4.12'
+          - ruby: "2.7.4"
+            bundler-version: '2.4.12'
+          - ruby: "3.0.6"
+            bundler-version: '2.4.12'
+          - ruby: "3.1.4"
+            bundler-version: '2.4.12'
+          - ruby: "3.2.2"
+            bundler-version: '2.4.12'
+          - ruby: "jruby-9.2"
+            bundler-version: '2.3.26'
+          - ruby: "jruby-9.3"
+            bundler-version: '2.3.26'
+          - ruby: "jruby-9.4"
+            bundler-version: '2.3.26'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
     - name: Bundle install
       run: |
-        gem install bundler
+        gem install bundler -v ${{ matrix.bundler-version }}
         bundle install --jobs=3
     - name: Run tests (MRI)
       run: bundle exec rake spec
