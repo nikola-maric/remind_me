@@ -17,8 +17,10 @@ module RemindMe
 
     # older versions of parallel gem used different code
     if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.5')
+      # :nocov:
       require 'parallel/processor_count'
       extend Parallel::ProcessorCount
+      # :nocov:
     end
 
     def self.check_reminders(check_path: '.')
@@ -92,6 +94,7 @@ module RemindMe
       groups
     end
 
+    # :nocov:
     def self.processor_count
       if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.5')
         super
@@ -99,6 +102,7 @@ module RemindMe
         Parallel.processor_count
       end
     end
+    # :nocov:
 
     private_class_method :in_groups,
                          :collect_ruby_files,

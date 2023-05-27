@@ -40,6 +40,7 @@ jobs:
         ruby-version: ${{ matrix.ruby }}
     - name: Bundle install
       run: |
+        gem update --system 3.2.3
         gem install bundler -v ${{ matrix.bundler-version }}
         bundle install --jobs=3
     - name: Run tests (MRI)
