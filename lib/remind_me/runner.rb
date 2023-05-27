@@ -14,9 +14,14 @@ module RemindMe
   class Runner
     extend BailOut
     extend Utils::Logger
+    extend Utils::Versions
+
+    def self.using_old_parallel_gem?
+      gem_version('parallel') < Gem::Version.new('1.23.0')
+    end
 
     # older versions of parallel gem used different code
-    if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.5')
+    if using_old_parallel_gem?
       # :nocov:
       require 'parallel/processor_count'
       extend Parallel::ProcessorCount
@@ -96,7 +101,7 @@ module RemindMe
 
     # :nocov:
     def self.processor_count
-      if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.5')
+      if using_old_parallel_gem?
         super
       else
         Parallel.processor_count

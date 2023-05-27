@@ -10,6 +10,10 @@ module RemindMe
         current_version.__send__(condition_comparators[comparator.to_sym], target_version)
       end
 
+      def gem_version(gem_name)
+        INSTALLED_GEMS[gem_name]
+      end
+
       def gem_installed?(gem)
         INSTALLED_GEMS.key?(gem.to_s)
       end
