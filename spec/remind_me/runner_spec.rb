@@ -241,12 +241,24 @@ RSpec.describe RemindMe::Runner do
 
     context 'gem version reminders' do
       it 'picks up single line comments properly' do
+        @gem_name = 'bundler'
+        @current_gem_version = Gem::Specification.find_by_name(@gem_name).version.to_s
+        @greater_gem_version = Gem::Specification.find_by_name(@gem_name).version.bump.to_s
+        @lower_gem_version = Gem::Version.new('0.1')
+        template = ERB.new(File.read('spec/testing_grounds/single_line/gem_version_reminder.erb'))
+        File.write('spec/testing_grounds/single_line/gem_version_reminder.rb', template.result(binding))
         gem_version_reminder_expectations('spec/testing_grounds/single_line/gem_version_reminder.rb',
                                           gem_version_single_line_error_messages,
                                           gem_version_single_line_condition_met_messages,
                                           gem_version_single_line_condition_not_met_messages)
       end
       it 'picks up multi line comments properly' do
+        @gem_name = 'bundler'
+        @current_gem_version = Gem::Specification.find_by_name(@gem_name).version.to_s
+        @greater_gem_version = Gem::Specification.find_by_name(@gem_name).version.bump.to_s
+        @lower_gem_version = Gem::Version.new('0.1')
+        template = ERB.new(File.read('spec/testing_grounds/multi_line/gem_version_reminder.erb'))
+        File.write('spec/testing_grounds/multi_line/gem_version_reminder.rb', template.result(binding))
         gem_version_reminder_expectations('spec/testing_grounds/multi_line/gem_version_reminder.rb',
                                           gem_version_multi_line_error_messages,
                                           gem_version_multi_line_condition_met_messages,

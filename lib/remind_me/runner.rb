@@ -2,7 +2,6 @@
 
 require 'parser/current'
 require 'find'
-require 'parallel/processor_count'
 require 'parallel'
 
 require_relative 'version'
@@ -15,7 +14,14 @@ module RemindMe
   class Runner
     extend BailOut
     extend Utils::Logger
-    extend Parallel::ProcessorCount
+
+    # older versions of parallel gem used different code
+    if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.5')
+      # :nocov:
+      require 'parallel/processor_count'
+      extend Parallel::ProcessorCount
+      # :nocov:
+    end
 
     def self.check_reminders(check_path: '.')
       Utils::ResultPrinter.new(collect_reminders(check_path)).print_results
@@ -87,6 +93,16 @@ module RemindMe
       end
       groups
     end
+
+    # :nocov:
+    def self.processor_count
+      if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.5')
+        super
+      else
+        Parallel.processor_count
+      end
+    end
+    # :nocov:
 
     private_class_method :in_groups,
                          :collect_ruby_files,
