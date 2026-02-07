@@ -1,0 +1,22 @@
+[package]
+name = "remind_me_native"
+version = "0.7.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "bench"
+path = "src/bench.rs"
+required-features = []
+
+[features]
+default = ["ruby"]
+ruby = ["magnus"]
+
+[dependencies]
+magnus = { version = "0.7", features = ["rb-sys"], optional = true }
+ignore = "0.4"
+memchr = "2"

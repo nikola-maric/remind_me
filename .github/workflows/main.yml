@@ -1,40 +1,27 @@
 name: Tests
 
-on: [push,pull_request]
+on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ "2.3.7", "2.4.10", "2.5.9", "2.6.8", "2.7.4", "3.0.6", "3.1.4", "3.2.2", "jruby-9.2", "jruby-9.3", "jruby-9.4" ]
-        include:
-          - ruby: "2.3.7"
-            requires-older-rubygems: true
-            requires-older-bundler: true
-          - ruby: "2.4.10"
-            requires-older-rubygems: true
-            requires-older-bundler: true
-          - ruby: "jruby-9.2"
-            requires-older-bundler: true
-          - ruby: "jruby-9.3"
-            requires-older-bundler: true
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-14]
+        # TODO: Add Ruby 4.0 and 4.1 once Magnus gem releases official support
+        ruby: ["2.7.8", "3.0.7", "3.1.7", "3.2.10", "3.3.10", "3.4.8"]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
-    - if: ${{ matrix.requires-older-rubygems }}
-      run: gem update --system 3.2.3
-    - if: ${{ matrix.requires-older-bundler }}
-      run: gem install bundler -v 2.3.26
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
     - name: Bundle install
       run: bundle install --jobs=3
-    - name: Run tests (MRI)
+    - name: Compile native extension
+      run: bundle exec rake compile
+    - name: Run tests
       run: bundle exec rake spec
-      if: "!startsWith(matrix.ruby, 'jruby')"
-    - name: Run tests (JRuby)
-      run: JRUBY_OPTS=--debug bundle exec rake spec
-      if: startsWith(matrix.ruby, 'jruby')

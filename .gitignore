@@ -13,3 +13,5 @@
 .ruby-version
 /*.gem
 /target/
+ext/remind_me/target/
+lib/remind_me/remind_me_native.*
