@@ -26,8 +26,11 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'exe'
   spec.executables   = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
+  spec.extensions = ['ext/remind_me/extconf.rb']
 
   spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rake-compiler'
+  spec.add_development_dependency 'rb_sys'
   spec.add_development_dependency 'rspec'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'simplecov'

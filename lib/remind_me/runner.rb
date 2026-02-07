@@ -10,6 +10,13 @@ require_relative 'reminder/generator'
 require_relative 'utils/logger'
 require_relative 'utils/result_printer'
 
+begin
+  require 'remind_me/remind_me_native'
+  REMIND_ME_NATIVE_AVAILABLE = true
+rescue LoadError
+  REMIND_ME_NATIVE_AVAILABLE = false
+end
+
 module RemindMe
   class Runner
     extend BailOut
@@ -33,6 +40,27 @@ module RemindMe
     end
 
     def self.collect_reminders(path)
+      if REMIND_ME_NATIVE_AVAILABLE
+        collect_reminders_native(path)
+      else
+        # :nocov:
+        collect_reminders_ruby(path)
+        # :nocov:
+      end
+    end
+
+    def self.collect_reminders_native(path)
+      raw_comments = RemindMe::Native.scan_for_remind_me_comments(path)
+      return if raw_comments.empty?
+
+      Parallel.flat_map(in_groups(raw_comments, processor_count, false)) do |comments|
+        parser = silent_parser
+        comments.flat_map { |raw_comment| RemindMe::Reminder::Generator.generate(raw_comment[0], raw_comment[1], parser) }
+      end
+    end
+
+    # :nocov:
+    def self.collect_reminders_ruby(path)
       files = relevant_ruby_files(path)
       return if files.empty?
 
@@ -42,6 +70,7 @@ module RemindMe
         raw_comments.flat_map { |raw_comment| RemindMe::Reminder::Generator.generate(raw_comment[0], raw_comment[1], parser) }
       end
     end
+    # :nocov:
 
     def self.silent_parser
       parser = Parser::CurrentRuby.new
@@ -65,6 +94,7 @@ module RemindMe
            .map { |x| [x[0], x[1][1].split("\n").first] }
     end
 
+    # :nocov:
     def self.relevant_ruby_files(parse_path)
       Parallel.flat_map(in_groups(collect_ruby_files(parse_path), processor_count, false)) do |files|
         files.select do |file|
@@ -84,6 +114,7 @@ module RemindMe
       end
       files
     end
+    # :nocov:
 
     def self.in_groups(array, number, fill_with = nil)
       division = array.size.div number
@@ -111,7 +142,9 @@ module RemindMe
 
     private_class_method :in_groups,
                          :collect_ruby_files,
-                         :collect_relevant_comments
+                         :collect_relevant_comments,
+                         :collect_reminders_native,
+                         :collect_reminders_ruby
   end
 end
 

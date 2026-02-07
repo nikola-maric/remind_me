@@ -1,0 +1,3 @@
+[workspace]
+members = ["ext/remind_me"]
+resolver = "2"
