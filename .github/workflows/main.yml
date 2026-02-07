@@ -9,7 +9,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-14]
-        ruby: ["2.7.8", "3.0.7", "3.1.7", "3.2.10", "3.3.10", "3.4.8", "4.0.1"]
+        # TODO: Add Ruby 4.0 and 4.1 once Magnus gem releases official support
+        ruby: ["2.7.8", "3.0.7", "3.1.7", "3.2.10", "3.3.10", "3.4.8"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Ruby
